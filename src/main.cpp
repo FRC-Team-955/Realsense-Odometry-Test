@@ -105,25 +105,37 @@ int main() {
 				hsv_threshold);
 
 		Mat horiz_blur_depth;
-		blur(depth_cv, horiz_blur_depth, Size(7, 1));
+		blur(depth_cv, horiz_blur_depth, Size(5, 1));
 		Sobel(horiz_blur_depth, depth_slope_cv, CV_32F, 1, 0);
-		Mat histogram;
 
+		Mat histogram;
+		Mat nonzero_hsv;
+
+		depth_cv.convertTo(nonzero_hsv, CV_8U);
+		bitwise_and(nonzero_hsv, hsv_threshold, nonzero_hsv);
+
+		Mat back_projection;
 		float range[] = { -0.1, 0.1 } ;
 		const float* hist_range = { range };
 		int hist_dim = 500;
-		float divisor = 1000.0;
-		depth_slope_cv /= divisor;
-		calcHist(&depth_slope_cv, 1, 0, hsv_threshold, histogram, 1, &hist_dim, &hist_range);
-		histogram.at<float>(0, 250) = 0; //Remove zeroes
-		display_histogram(150, hist_dim, histogram);
+		float scale = 3000.0;
 
-		//Draw lines of n length from the left to the end of the hist
+		depth_slope_cv /= scale;
+		calcHist(&depth_slope_cv, 1, 0, nonzero_hsv, histogram, 1, &hist_dim, &hist_range);
 
-		//std::cout << (float)depth_cv.at<unsigned int>(depth_cv.size().width / 2, depth_cv.size().height / 2) * depth_scale << std::endl;
+		cv::Point max_hist;
+		cv::minMaxLoc(histogram, 0, 0, 0, &max_hist);
+		float factor = 1.0 / histogram.at<float>(max_hist);
+		calcBackProject(&depth_slope_cv, 1, 0, histogram, back_projection, &hist_range, factor);
+
+		Mat backproject_out;
+		back_projection.copyTo(backproject_out, nonzero_hsv);
+
+		Mat is_cube_face;
+		threshold(backproject_out, is_cube_face, 0.95, 255, THRESH_BINARY);
 
 		// Update the window with new data
-		imshow("Depth", depth_cv * 10);
+		imshow("Depth", is_cube_face);
 		imshow("Color", color_cv);
 
 #if SHOW_HSV
