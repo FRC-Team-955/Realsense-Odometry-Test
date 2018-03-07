@@ -3,8 +3,8 @@ SET( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
 
-# Revision1 project
-PROJECT(realsense_test)
+# Project name
+PROJECT(vis_odo)
 
 FIND_PACKAGE(OpenCV REQUIRED)
 
@@ -21,7 +21,7 @@ SET (CMAKE_CXX_COMPILER "/usr/bin/clang++")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 
 # Make all of the sources executable
-ADD_EXECUTABLE(realsense_test ${SOURCES})
+ADD_EXECUTABLE(vis_odo ${SOURCES})
 
 # Link libraries into the executable
-TARGET_LINK_LIBRARIES(realsense_test ${OpenCV_LIBS} ${Realsense_LIBS})
+TARGET_LINK_LIBRARIES(vis_odo ${OpenCV_LIBS} ${Realsense_LIBS})
