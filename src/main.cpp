@@ -12,6 +12,9 @@ const float max_depth = 10.0f;        // in meters
 const float max_depth_diff = 0.10f;  // in meters
 const float max_points_part = 0.09f;
 
+const float display_scale_factor = 60.0f;
+const float display_window_size = 800;
+
 float get_depth_scale(rs2::device dev) {
 	// Go over the device's sensors
 	for (rs2::sensor &sensor : dev.query_sensors()) {
@@ -30,8 +33,8 @@ int main () {
 	rs2::config cfg;
 	//cfg.enable_stream(RS2_STREAM_COLOR, 1920, 1080, RS2_FORMAT_BGR8, 30);
 	//cfg.enable_stream(RS2_STREAM_DEPTH, 1280, 720, RS2_FORMAT_Z16, 30);
-	cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
-	cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
+	cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 60);
+	cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 60);
 
 	rs2::align align(RS2_STREAM_COLOR);
 
@@ -87,7 +90,7 @@ int main () {
 			minGradMagnitudes, max_points_part,
 			rgbd::Odometry::RIGID_BODY_MOTION);
 
-	Mat traj = Mat::zeros(800, 800, CV_8UC3);
+	Mat traj = Mat::zeros(display_window_size, display_window_size, CV_8UC3);
 
 	Mat rotationMatrix, translationMatrix;
 
@@ -138,25 +141,20 @@ int main () {
 					rotationMatrix = rotationMat.clone();
 					second = false;
 				}
-				translationMatrix = translationMatrix + (rotationMatrix * translateMat);
+				translationMatrix = translationMatrix - (rotationMatrix * translateMat);
 				rotationMatrix = rotationMat * rotationMatrix;
 				int x =
-					int(60.0 * translationMatrix.at<double>(0)) +
-					800 / 2;
+					int(display_scale_factor * translationMatrix.at<double>(0)) +
+					display_window_size / 2;
 				int y =
-					int(60.0 * translationMatrix.at<double>(2)) +
-					800 / 2;
+					display_window_size - (int(display_scale_factor * translationMatrix.at<double>(2)) +
+					display_window_size / 2);
 
 				circle(traj, Point(x, y), 1, CV_RGB(255, 0, 0), 2);
-				rectangle(traj, Point(10, 30), Point(550, 50), CV_RGB(0, 0, 0),
-						CV_FILLED);
-				/*
-					std::cout << 
-					translationMatrix.at<float>(0) << " : " <<
-					translationMatrix.at<float>(1) << " : " <<
-					translationMatrix.at<float>(2) << " : " <<
+				std::cout << 
+					translationMatrix.at<double>(0) << " : " <<
+					translationMatrix.at<double>(2) <<
 					std::endl;
-					*/
 			} else {
 				std::cerr << hmm++ << std::endl;
 			}
